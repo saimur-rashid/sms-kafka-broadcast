@@ -2,11 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy from root (parent directory)
-COPY requirements.txt .
+COPY utils/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY consumers/consumer.py ./consumers/
+COPY utils ./utils/
 
-# Default command (will be overridden in docker-compose)
+WORKDIR /app/consumers
+
 CMD ["python", "consumer.py"]

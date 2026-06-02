@@ -7,7 +7,7 @@
   },
   "kafka": {
     "batch_size": 50,
-    "bootstrap_servers": ["localhost:9092"],
+    "bootstrap_servers": ["kafka:9092"],
     "sms_topic": "sms_topic",
     "retry_topic": "sms_retry_topic",
     "dlq_topic": "sms_dlq_topic",

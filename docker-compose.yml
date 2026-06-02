@@ -4,6 +4,8 @@ services:
     container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - sms-network
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
@@ -15,7 +17,98 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - sms-network
+
+  producer:
+    build:
+      context: .
+      dockerfile: producers/Dockerfile
+    container_name: sms-producer
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PYTHONPATH: /app
+    volumes:
+      - ./utils/config.json:/app/utils/config.json
+      - ./utils/__init__.py:/app/utils/__init__.py
+      - ./utils/utils.py:/app/utils/utils.py
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - sms-network
+    working_dir: /app/producers
+    command: python producer.py
+
+  consumer:
+    build:
+      context: .
+      dockerfile: consumers/Dockerfile
+    container_name: sms-consumer
+    depends_on:
+      - kafka
+      - producer
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PYTHONPATH: /app
+    volumes:
+      - ./utils/config.json:/app/utils/config.json
+      - ./utils/__init__.py:/app/utils/__init__.py
+      - ./utils/utils.py:/app/utils/utils.py
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - sms-network
+    working_dir: /app/consumers
+    command: python consumer.py
+
+  retry:
+    build:
+      context: .
+      dockerfile: retry/Dockerfile
+    container_name: sms-retry
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PYTHONPATH: /app
+    volumes:
+      - ./utils/config.json:/app/utils/config.json
+      - ./utils/__init__.py:/app/utils/__init__.py
+      - ./utils/utils.py:/app/utils/utils.py
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - sms-network
+    working_dir: /app/retry
+    command: python retry.py
+
+  dlq:
+    build:
+      context: .
+      dockerfile: dlq/Dockerfile
+    container_name: sms-dlq
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PYTHONPATH: /app
+    volumes:
+      - ./utils/config.json:/app/utils/config.json
+      - ./utils/__init__.py:/app/utils/__init__.py
+      - ./utils/utils.py:/app/utils/utils.py
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - sms-network
+    working_dir: /app/dlq
+    command: python dlq.py
+
+networks:
+  sms-network:
+    driver: bridge
