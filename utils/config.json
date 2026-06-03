@@ -3,21 +3,35 @@
     "user": "rpt",
     "password": "Way4#admi#123",
     "dsn": "10.0.16.200:1521/WAY4DB",
-    "poll_interval_sec": 2
+    "poll_interval_sec": 0
   },
   "kafka": {
-    "batch_size": 50,
+    "batch_size": 10000,
     "bootstrap_servers": ["kafka:9092"],
     "sms_topic": "sms_topic",
     "retry_topic": "sms_retry_topic",
     "dlq_topic": "sms_dlq_topic",
     "max_retries": 3,
-    "retry_delay_sec": 10
+    "retry_delay_sec": 10,
+    "consumer_max_workers": 200,
+    "retry_max_workers": 100,
+    "producer_batch_timeout_ms": 100
   },
   "banks": [
     {
       "bank_id": "1790",
       "bank_name": "Bank Asia",
+      "ulka": {
+        "base_url": "http://10.0.14.83:6841",
+        "source_id": "BAL_TXN",
+        "username": "bal_txn",
+        "password": "Bal@6841",
+        "sender": "QCASH"
+      }
+    },
+    {
+      "bank_id": "1791",
+      "bank_name": "Bank test",
       "ulka": {
         "base_url": "http://10.0.14.83:6841",
         "source_id": "BAL_TXN",

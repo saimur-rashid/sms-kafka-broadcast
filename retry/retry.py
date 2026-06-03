@@ -4,6 +4,7 @@ import json
 import time
 import requests
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logger = setup_logger('retry', 'retry')
 
@@ -11,10 +12,14 @@ config = load_config()
 consumer = create_consumer("retry-group")
 consumer.subscribe([config['kafka']['retry_topic']])
 
-logger.info("🚀 Retry Service Started - Processing failed messages...")
+logger.info("🚀 Retry Service Started...")
+
+# ✅ INCREASED to 100 workers
+executor = ThreadPoolExecutor(max_workers=config['kafka'].get('retry_max_workers', 100))
+
 
 def call_ulka_api(bank, payload):
-    """Call ULKA SMS Gateway - Same as consumer"""
+    """Call ULKA SMS Gateway"""
     try:
         ulka = bank['ulka']
         base_url = ulka['base_url'].rstrip('/')
@@ -30,82 +35,90 @@ def call_ulka_api(bank, payload):
             f"message={encoded_message}"
         )
 
-        logger.info(f"🔄 Retrying ULKA: {payload['id']} -> {bank['bank_id']} (Attempt {payload.get('retry_count', 0) + 1}/3)")
-
         response = requests.get(url, timeout=15)
-        logger.info(f"ULKA Response Status: {response.status_code}")
-
-        # Parse XML response
         root = ET.fromstring(response.text)
         response_code = root.findtext("ResponseCode")
-        info = root.findtext("Info")
 
-        logger.info(f"ULKA Response - Code: {response_code} | Info: {info}")
+        return response_code == "111"
 
-        return response_code == "111"  # Success code
-
-    except requests.exceptions.Timeout:
-        logger.error(f"ULKA Timeout - ID: {payload.get('id')}")
-        return False
-    except requests.exceptions.ConnectionError:
-        logger.error(f"ULKA Connection Error - ID: {payload.get('id')}")
-        return False
-    except ET.ParseError as e:
-        logger.error(f"Invalid XML from ULKA: {e}")
-        return False
     except Exception as e:
-        logger.error(f"Unexpected error calling ULKA: {e}", exc_info=True)
+        logger.error(f"ULKA Error - ID: {payload.get('id')}: {e}")
         return False
 
+
+batch_messages = []
+last_process_time = time.time()
 
 while True:
     try:
-        msg = consumer.poll(1.0)
-        if msg is None:
-            continue
+        msg = consumer.poll(0.05)
+        if msg is not None and not msg.error():
+            batch_messages.append(msg)
 
-        data = json.loads(msg.value().decode())
-        msg_id = data.get('id')
-        bank_id = data.get('bank_id')
-        retry_count = int(data.get('retry_count', 0))
+        # Process when: 500 messages OR 1 second passed
+        should_process = (
+                len(batch_messages) >= 500 or
+                (len(batch_messages) > 0 and time.time() - last_process_time >= 1)
+        )
 
-        # Find bank config
-        bank = next((b for b in config['banks']
-                    if str(b['bank_id']).strip() == str(bank_id).strip()), None)
+        if should_process and batch_messages:
+            logger.info(f"📦 Retry batch: {len(batch_messages)} messages...")
 
-        if not bank:
-            logger.error(f"Bank {bank_id} not found in config")
-            consumer.commit(msg)
-            continue
+            futures_to_msg = {}
 
-        # Try the API call again
-        success = call_ulka_api(bank, data)
+            for msg in batch_messages:
+                try:
+                    data = json.loads(msg.value().decode())
+                    bank_id = data.get('bank_id')
+                    bank = next((b for b in config['banks']
+                                 if str(b['bank_id']).strip() == str(bank_id).strip()), None)
 
-        if success:
-            logger.info(f"✅ RETRY SUCCESS - ID: {msg_id} | Bank: {bank_id}")
-            update_sms_status(msg_id, status="S", retry_count=retry_count)
-        else:
-            # Still failing - increment retry count
-            retry_count += 1
-            data['retry_count'] = retry_count
+                    if not bank:
+                        logger.error(f"Bank {bank_id} not found")
+                        consumer.commit(msg)
+                        continue
 
-            if retry_count >= config['kafka']['max_retries']:
-                logger.error(f"🚨 Max Retries Exceeded - Moving to DLQ: {msg_id}")
-                p = create_producer()
-                p.produce(config['kafka']['dlq_topic'], json.dumps(data).encode('utf-8'))
-                p.flush()
-                update_sms_status(msg_id, status="F", retry_count=retry_count,
-                                error_msg="Max retries exhausted")
-            else:
-                logger.warning(f"🔄 Retry {retry_count}/{config['kafka']['max_retries']} - Republishing: {msg_id}")
-                p = create_producer()
-                p.produce(config['kafka']['retry_topic'], json.dumps(data).encode('utf-8'))
-                p.flush()
-                update_sms_status(msg_id, status="R", retry_count=retry_count,
-                                error_msg="Retry attempt")
+                    future = executor.submit(call_ulka_api, bank, data)
+                    futures_to_msg[future] = (msg, data)
+                except Exception as e:
+                    logger.error(f"Retry prep error: {e}")
 
-        consumer.commit(msg)
+            for future in as_completed(futures_to_msg.keys()):
+                msg, data = futures_to_msg[future]
+                msg_id = data.get('id')
+                retry_count = int(data.get('retry_count', 0))
+
+                try:
+                    success = future.result()
+
+                    if success:
+                        logger.info(f"✅ RETRY SUCCESS - {msg_id}")
+                        update_sms_status(msg_id, status="S", retry_count=retry_count)
+                    else:
+                        retry_count += 1
+                        data['retry_count'] = retry_count
+                        p = create_producer()
+
+                        if retry_count >= config['kafka']['max_retries']:
+                            logger.error(f"🚨 DLQ: {msg_id}")
+                            p.produce(config['kafka']['dlq_topic'], json.dumps(data).encode('utf-8'))
+                            update_sms_status(msg_id, status="F", retry_count=retry_count,
+                                              error_msg="Max retries exhausted")
+                        else:
+                            p.produce(config['kafka']['retry_topic'], json.dumps(data).encode('utf-8'))
+                            update_sms_status(msg_id, status="R", retry_count=retry_count,
+                                              error_msg="Retry attempt")
+                        p.flush()
+
+                    consumer.commit(msg)
+                except Exception as e:
+                    logger.error(f"Retry result error: {e}")
+
+            logger.info(f"✅ Retry batch complete. Waiting 2 seconds...")
+            time.sleep(2)
+            batch_messages = []
+            last_process_time = time.time()
 
     except Exception as e:
-        logger.error(f"Retry service error: {e}", exc_info=True)
+        logger.error(f"Retry error: {e}", exc_info=True)
         time.sleep(1)
