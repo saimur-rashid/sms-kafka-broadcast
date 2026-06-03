@@ -1,8 +1,11 @@
-from utils import load_config, create_consumer, create_producer, logger, update_sms_status
+from utils import load_config, create_consumer, create_producer, update_sms_status
+from utils.logger_config import setup_logger
 import json
 import time
 import requests
 import xml.etree.ElementTree as ET
+
+logger = setup_logger('retry', 'retry')
 
 config = load_config()
 consumer = create_consumer("retry-group")

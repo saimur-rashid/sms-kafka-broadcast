@@ -4,6 +4,7 @@ import logging
 
 import oracledb
 from confluent_kafka import Producer, Consumer
+#from .logger_config import setup_logger
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

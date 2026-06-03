@@ -1,6 +1,8 @@
 import json
-from utils import load_config, create_consumer, logger
+from utils import load_config, create_consumer
+from utils.logger_config import setup_logger
 
+logger = setup_logger('dlq', 'dlq')
 config = load_config()
 kafka_cfg = config['kafka']
 

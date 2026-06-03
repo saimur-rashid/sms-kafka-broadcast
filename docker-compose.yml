@@ -34,6 +34,7 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       PYTHONPATH: /app
+      TZ: Asia/Dhaka
     volumes:
       - ./utils/config.json:/app/utils/config.json
       - ./utils/__init__.py:/app/utils/__init__.py
@@ -56,6 +57,7 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       PYTHONPATH: /app
+      TZ: Asia/Dhaka
     volumes:
       - ./utils/config.json:/app/utils/config.json
       - ./utils/__init__.py:/app/utils/__init__.py
@@ -77,6 +79,7 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       PYTHONPATH: /app
+      TZ: Asia/Dhaka
     volumes:
       - ./utils/config.json:/app/utils/config.json
       - ./utils/__init__.py:/app/utils/__init__.py
@@ -98,6 +101,7 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       PYTHONPATH: /app
+      TZ: Asia/Dhaka
     volumes:
       - ./utils/config.json:/app/utils/config.json
       - ./utils/__init__.py:/app/utils/__init__.py

@@ -2,8 +2,10 @@ import json
 import time
 import requests
 import xml.etree.ElementTree as ET
-from utils import load_config, create_producer, create_consumer, logger, update_sms_status
+from utils import load_config, create_producer, create_consumer, update_sms_status
+from utils.logger_config import setup_logger
 
+logger = setup_logger('consumer', 'consumer')
 config = load_config()
 kafka_cfg = config['kafka']
 

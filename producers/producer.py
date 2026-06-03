@@ -1,8 +1,10 @@
 import time
 import json
 import oracledb
-from utils import load_config, create_producer, logger
+from utils import load_config, create_producer
+from utils.logger_config import setup_logger
 
+logger = setup_logger('producer', 'producer')
 config = load_config()
 producer = create_producer()
 kafka_cfg = config['kafka']
