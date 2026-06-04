@@ -1,0 +1,47 @@
+2026-06-03 12:29:20 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780468160
+2026-06-03 12:32:59 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780468379
+2026-06-03 12:33:07 - consumer - ERROR - Consumer error: KafkaError{code=UNKNOWN_TOPIC_OR_PART,val=3,str="Subscribed topic not available: sms_topic: Broker: Unknown topic or partition"}
+2026-06-03 12:42:34 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780468954
+2026-06-03 12:43:47 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780469027
+2026-06-03 12:59:47 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780469987
+2026-06-03 13:04:50 - consumer - INFO - 🌐 Calling ULKA: 24 -> 1790
+2026-06-03 13:04:50 - consumer - DEBUG - ULKA Raw Response: <SendSmsResponse><ResponseCode>111</ResponseCode><Info>SMS send Successfully</Info></SendSmsResponse>
+2026-06-03 13:04:50 - consumer - INFO - ULKA Response - Code: 111 | Info: SMS send Successfully
+2026-06-03 13:04:50 - consumer - INFO - ✅ SUCCESS - ID: 24 | Bank: 1790
+2026-06-03 13:29:59 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780471799
+2026-06-03 13:32:41 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780471961
+2026-06-03 13:36:37 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780472197
+2026-06-03 13:41:26 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780472486
+2026-06-03 13:41:36 - consumer - INFO - 🌐 Calling ULKA: 24 -> 1790
+2026-06-03 13:41:36 - consumer - DEBUG - ULKA Raw Response: <SendSmsResponse><ResponseCode>111</ResponseCode><Info>SMS send Successfully</Info></SendSmsResponse>
+2026-06-03 13:41:36 - consumer - INFO - ULKA Response - Code: 111 | Info: SMS send Successfully
+2026-06-03 13:41:36 - consumer - INFO - ✅ SUCCESS - ID: 24 | Bank: 1790
+2026-06-03 14:30:24 - consumer - INFO - 🌐 Calling ULKA: 24 -> 1790
+2026-06-03 14:30:25 - consumer - DEBUG - ULKA Raw Response: <SendSmsResponse><ResponseCode>111</ResponseCode><Info>SMS send Successfully</Info></SendSmsResponse>
+2026-06-03 14:30:25 - consumer - INFO - ULKA Response - Code: 111 | Info: SMS send Successfully
+2026-06-03 14:30:25 - consumer - INFO - ✅ SUCCESS - ID: 24 | Bank: 1790
+2026-06-03 15:20:11 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780478411
+2026-06-03 15:20:19 - consumer - ERROR - Consumer error: KafkaError{code=UNKNOWN_TOPIC_OR_PART,val=3,str="Subscribed topic not available: sms_topic: Broker: Unknown topic or partition"}
+2026-06-03 15:29:09 - consumer - INFO - 🌐 Calling ULKA: 24 -> 1790
+2026-06-03 15:29:09 - consumer - DEBUG - ULKA Raw Response: <SendSmsResponse><ResponseCode>111</ResponseCode><Info>SMS send Successfully</Info></SendSmsResponse>
+2026-06-03 15:29:09 - consumer - INFO - ULKA Response - Code: 111 | Info: SMS send Successfully
+2026-06-03 15:29:09 - consumer - INFO - ✅ SUCCESS - ID: 24 | Bank: 1790
+2026-06-03 16:41:01 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780483261
+2026-06-03 16:45:48 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780483548
+2026-06-03 16:47:02 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780483622
+2026-06-03 16:47:08 - consumer - ERROR - Consumer error: KafkaError{code=UNKNOWN_TOPIC_OR_PART,val=3,str="Subscribed topic not available: sms_topic: Broker: Unknown topic or partition"}
+2026-06-03 16:54:51 - consumer - INFO - 🌐 Calling ULKA: 24 -> 1790
+2026-06-03 16:54:51 - consumer - DEBUG - ULKA Raw Response: <SendSmsResponse><ResponseCode>111</ResponseCode><Info>SMS send Successfully</Info></SendSmsResponse>
+2026-06-03 16:54:51 - consumer - INFO - ULKA Response - Code: 111 | Info: SMS send Successfully
+2026-06-03 16:54:51 - consumer - INFO - ✅ SUCCESS - ID: 24 | Bank: 1790
+2026-06-03 17:02:28 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780484548
+2026-06-03 17:05:56 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780484756
+2026-06-03 17:09:37 - consumer - INFO - 🚀 Consumer started with group: sms-bank-consumer-1780484977
+2026-06-03 17:14:41 - consumer - INFO - 🌐 Calling ULKA: 22 -> 1791
+2026-06-03 17:14:41 - consumer - DEBUG - ULKA Raw Response: <SendSmsResponse><ResponseCode>111</ResponseCode><Info>SMS send Successfully</Info></SendSmsResponse>
+2026-06-03 17:14:41 - consumer - INFO - ULKA Response - Code: 111 | Info: SMS send Successfully
+2026-06-03 17:14:41 - consumer - INFO - ✅ SUCCESS - ID: 22 | Bank: 1791
+2026-06-03 17:14:41 - consumer - INFO - 🌐 Calling ULKA: 14 -> 1791
+2026-06-03 17:14:41 - consumer - DEBUG - ULKA Raw Response: <SendSmsResponse><ResponseCode>111</ResponseCode><Info>SMS send Successfully</Info></SendSmsResponse>
+2026-06-03 17:14:41 - consumer - INFO - ULKA Response - Code: 111 | Info: SMS send Successfully
+2026-06-03 17:14:41 - consumer - INFO - ✅ SUCCESS - ID: 14 | Bank: 1791
