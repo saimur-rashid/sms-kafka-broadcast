@@ -25,17 +25,29 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      # Add this to ensure fresh start each time
       KAFKA_LOG_DIRS: /var/lib/kafka/data
+      # ✅ Add this to auto-create topics on startup
+      KAFKA_CREATE_TOPICS: "sms_topic:30:1,email_topic:30:1,sms_retry_topic:10:1,sms_dlq_topic:5:1"
     volumes:
       - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
     restart: unless-stopped
     networks:
       - sms-network
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: txn-kafka-ui
+    container_name: kafka-ui
     depends_on:
       - kafka
     ports:
@@ -43,100 +55,204 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     networks:
       - sms-network
 
-  producer:
+  # ==================== PRODUCERS ====================
+  producer-sms:
     build:
       context: .
       dockerfile: producers/Dockerfile
-    container_name: sms-producer
+    container_name: producer-sms
+    command: python producers/producer_sms.py
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      PYTHONPATH: /app
-      TZ: Asia/Dhaka
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PYTHONPATH=/app
+      - TZ=Asia/Dhaka
+      - PRODUCER_TYPE=sms
+      - PYTHONUNBUFFERED=1
     volumes:
-      - ./utils/config.json:/app/utils/config.json
-      - ./utils/__init__.py:/app/utils/__init__.py
-      - ./utils/utils.py:/app/utils/utils.py
+      - ./utils/config.json:/app/utils/config.json:ro
+      - ./payment:/app/payment
       - ./logs:/app/logs
     restart: unless-stopped
     networks:
       - sms-network
-    working_dir: /app/producers
-    command: python producer.py
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  consumer:
+  producer-email:
+    build:
+      context: .
+      dockerfile: producers/Dockerfile
+    container_name: producer-email
+    command: python producers/producer_email.py
+    depends_on:
+      kafka:
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PYTHONPATH=/app
+      - TZ=Asia/Dhaka
+      - PRODUCER_TYPE=email
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./utils/config.json:/app/utils/config.json:ro
+      - ./payment:/app/payment
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - sms-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== CONSUMERS ====================
+  consumer-sms:
     build:
       context: .
       dockerfile: consumers/Dockerfile
-    container_name: sms-consumer
+    container_name: consumer-sms
+    command: python consumers/consumer_sms.py
     depends_on:
-      - kafka
-      - producer
+      kafka:
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      PYTHONPATH: /app
-      TZ: Asia/Dhaka
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PYTHONPATH=/app
+      - TZ=Asia/Dhaka
+      - CONSUMER_TYPE=sms
+      - PYTHONUNBUFFERED=1
     volumes:
-      - ./utils/config.json:/app/utils/config.json
-      - ./utils/__init__.py:/app/utils/__init__.py
-      - ./utils/utils.py:/app/utils/utils.py
+      - ./utils/config.json:/app/utils/config.json:ro
       - ./logs:/app/logs
     restart: unless-stopped
     networks:
       - sms-network
-    working_dir: /app/consumers
-    command: python consumer.py
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  consumer-email:
+    build:
+      context: .
+      dockerfile: consumers/Dockerfile
+    container_name: consumer-email
+    command: python consumers/consumer_email.py
+    depends_on:
+      kafka:
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PYTHONPATH=/app
+      - TZ=Asia/Dhaka
+      - CONSUMER_TYPE=email
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./utils/config.json:/app/utils/config.json:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - sms-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== RETRY ====================
   retry:
     build:
       context: .
       dockerfile: retry/Dockerfile
-    container_name: sms-retry
+    container_name: retry-consumer
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      PYTHONPATH: /app
-      TZ: Asia/Dhaka
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PYTHONPATH=/app
+      - TZ=Asia/Dhaka
+      - PYTHONUNBUFFERED=1
     volumes:
-      - ./utils/config.json:/app/utils/config.json
-      - ./utils/__init__.py:/app/utils/__init__.py
-      - ./utils/utils.py:/app/utils/utils.py
+      - ./utils/config.json:/app/utils/config.json:ro
       - ./logs:/app/logs
     restart: unless-stopped
     networks:
       - sms-network
-    working_dir: /app/retry
-    command: python retry.py
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  # ==================== DLQ ====================
   dlq:
     build:
       context: .
       dockerfile: dlq/Dockerfile
-    container_name: sms-dlq
+    container_name: dlq-consumer
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      PYTHONPATH: /app
-      TZ: Asia/Dhaka
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PYTHONPATH=/app
+      - TZ=Asia/Dhaka
+      - PYTHONUNBUFFERED=1
     volumes:
-      - ./utils/config.json:/app/utils/config.json
-      - ./utils/__init__.py:/app/utils/__init__.py
-      - ./utils/utils.py:/app/utils/utils.py
+      - ./utils/config.json:/app/utils/config.json:ro
       - ./logs:/app/logs
     restart: unless-stopped
     networks:
       - sms-network
-    working_dir: /app/dlq
-    command: python dlq.py
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==================== PAYMENT EXECUTOR ====================
+  payment-executor:
+    build:
+      context: .
+      dockerfile: payment/Dockerfile
+    container_name: payment-executor
+    depends_on:
+      kafka:
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PYTHONPATH=/app
+      - TZ=Asia/Dhaka
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./utils/config.json:/app/utils/config.json:ro
+      - ./payment:/app/payment
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - sms-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   kafka_data:
+
 networks:
   sms-network:
     driver: bridge

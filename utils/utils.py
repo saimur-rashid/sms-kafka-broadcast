@@ -87,8 +87,39 @@ def update_sms_status(
         with conn.cursor() as cur:
             cur.execute(
                 """
-                UPDATE SMS_Q_TABLE
-                SET STATUS        = :status,
+                UPDATE SMS_EMAIL_Q_TABLE
+                SET STATUS_SMS        = :status,
+                    RETRY_COUNT   = :retry_count,
+                    ERROR_MESSAGE = :error_msg,
+                    CONSUMER_ID   = :consumer_id,
+                    UPDATED_AT    = SYSTIMESTAMP
+                WHERE ID = :msg_id
+                """,
+                status=status,
+                retry_count=retry_count,
+                error_msg=error_msg,
+                consumer_id=consumer_id,
+                msg_id=msg_id,
+            )
+
+        conn.commit()
+
+def update_email_status(
+        msg_id,
+        status,
+        retry_count=0,
+        error_msg=None,
+        consumer_id=None,
+        config=None,
+):
+    pool = get_pool(config)
+
+    with pool.acquire() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE SMS_EMAIL_Q_TABLE
+                SET STATUS_EMAIL        = :status,
                     RETRY_COUNT   = :retry_count,
                     ERROR_MESSAGE = :error_msg,
                     CONSUMER_ID   = :consumer_id,
