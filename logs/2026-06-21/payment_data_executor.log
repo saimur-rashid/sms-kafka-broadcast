@@ -1,0 +1,29 @@
+2026-06-21 16:26:07 - payment_data_executor - INFO - 🔍 Testing Oracle Database Connection...
+2026-06-21 16:26:07 - payment_data_executor - INFO - ✅ Oracle Connection Successful! Server Time: 2026-06-21 16:26:07
+2026-06-21 16:26:07 - payment_data_executor - INFO - 📋 Columns in SMS_EMAIL_Q_TABLE: ['ID', 'CREATE_AT', 'UPDATED_AT', 'BANK_ID', 'CLIENT_ID', 'CARD_NO', 'MOBILE', 'STATUS_SMS', 'EMAIL', 'STATUS_EMAIL', 'MSG_TYPE', 'MESSAGE', 'RETRY_COUNT', 'ERROR_MESSAGE', 'CONSUMER_ID']
+2026-06-21 16:26:07 - payment_data_executor - INFO - 📋 Columns in PAYMENT_TEST: ['TXN_ID', 'MOBILE', 'AMOUNT', 'BANK_ID', 'MESSAGE', 'STATUS', 'RETRY_COUNT', 'ERROR_MSG', 'CREATED_AT', 'UPDATED_AT', 'EMAIL']
+2026-06-21 16:26:07 - payment_data_executor - INFO - Creating Oracle Connection Pool...
+2026-06-21 16:26:07 - payment_data_executor - INFO - 🚀 Payment Producer Started - Polling Payment Table every 5 minutes...
+2026-06-21 16:26:07 - payment_data_executor - INFO - 📌 Loaded last transaction ID: 4
+2026-06-21 16:26:07 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 16:31:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 16:36:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 16:41:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 16:46:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 16:51:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 16:56:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 17:01:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 17:06:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 17:11:06 - payment_data_executor - INFO - 📊 Poll #0 - Found 1 new payment records
+2026-06-21 17:11:06 - payment_data_executor - DEBUG - Processing TXN 5: mobile=01729603778, email=rashid@itcbd.com, amount=10000.0, bank_id=1790
+2026-06-21 17:11:06 - payment_data_executor - WARNING - STATUS column not found, trying without STATUS
+2026-06-21 17:11:06 - payment_data_executor - DEBUG - ✉️ Inserted SMS/Email for payment TXN 5
+2026-06-21 17:11:07 - payment_data_executor - INFO - ✅ Inserted 1 SMS/Email records | Total inserted: 1
+2026-06-21 17:11:07 - payment_data_executor - INFO - 💾 Saved last transaction ID: 5
+2026-06-21 17:11:07 - payment_data_executor - INFO - ⏳ Next poll in 5 minutes...
+2026-06-21 17:16:07 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 17:21:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 17:26:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 17:31:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 17:36:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 17:41:06 - payment_data_executor - DEBUG - No new payment records found

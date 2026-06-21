@@ -1,0 +1,29 @@
+2026-06-17 16:23:18 - consumer_email - INFO - 🚀 Email Consumer started with group: email-bank-consumer-1781691798
+2026-06-17 16:23:23 - consumer_email - INFO - 📦 Processing email batch: 1 messages...
+2026-06-17 16:23:23 - consumer_email - DEBUG - Sending email to rashid@itcbd.com for ID: 4
+2026-06-17 16:23:27 - consumer_email - ERROR - Email API connection error for ID: 4
+2026-06-17 16:23:27 - consumer_email - WARNING - 🔄 Email Retry 1/3 - 4
+2026-06-17 16:23:27 - consumer_email - ERROR - Email result error - ID: 4: update_email_status() got an unexpected keyword argument 'response_data'
+2026-06-17 16:23:27 - consumer_email - INFO - ✅ Email batch complete: 1 msgs in 4.01s (0 msg/sec)
+2026-06-17 16:23:27 - consumer_email - INFO - 📊 Email Success: 0 | Failed: 0
+2026-06-17 16:23:27 - consumer_email - INFO - ⏳ Waiting 2 seconds before next email batch...
+2026-06-17 16:23:30 - consumer_email - INFO - 📦 Processing email batch: 2 messages...
+2026-06-17 16:23:30 - consumer_email - DEBUG - Sending email to rashid@itcbd.com for ID: 5
+2026-06-17 16:23:30 - consumer_email - DEBUG - Sending email to rashid@itcbd.com for ID: 6
+2026-06-17 16:23:35 - consumer_email - ERROR - Email API connection error for ID: 5
+2026-06-17 16:23:35 - consumer_email - WARNING - 🔄 Email Retry 1/3 - 5
+2026-06-17 16:23:35 - consumer_email - ERROR - Email result error - ID: 5: update_email_status() got an unexpected keyword argument 'response_data'
+2026-06-17 16:23:48 - consumer_email - ERROR - Email API returned 502: <html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+
+2026-06-17 16:23:48 - consumer_email - WARNING - 🔄 Email Retry 1/3 - 6
+2026-06-17 16:23:48 - consumer_email - ERROR - Email result error - ID: 6: update_email_status() got an unexpected keyword argument 'response_data'
+2026-06-17 16:23:48 - consumer_email - INFO - ✅ Email batch complete: 2 msgs in 18.20s (0 msg/sec)
+2026-06-17 16:23:48 - consumer_email - INFO - 📊 Email Success: 0 | Failed: 0
+2026-06-17 16:23:48 - consumer_email - INFO - ⏳ Waiting 2 seconds before next email batch...
+2026-06-17 16:39:52 - consumer_email - INFO - 🚀 Email Consumer started with group: email-bank-consumer-1781692792

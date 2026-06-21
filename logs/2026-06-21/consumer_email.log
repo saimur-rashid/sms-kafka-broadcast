@@ -1,0 +1,8 @@
+2026-06-21 16:26:07 - consumer_email - INFO - 🚀 Email Consumer started with group: email-bank-consumer-1782037567
+2026-06-21 17:11:07 - consumer_email - INFO - 📦 Processing email batch: 1 messages...
+2026-06-21 17:11:07 - consumer_email - DEBUG - Sending email to rashid@itcbd.com for ID: 21
+2026-06-21 17:11:11 - consumer_email - ERROR - Email API connection error for ID: 21
+2026-06-21 17:11:11 - consumer_email - ERROR - Email result error - ID: 21: [Errno 2] No such file or directory: '/app/utils/config.json'
+2026-06-21 17:11:11 - consumer_email - INFO - ✅ Email batch complete: 1 msgs in 4.03s (0 msg/sec)
+2026-06-21 17:11:11 - consumer_email - INFO - 📊 Email Success: 0 | Failed: 0
+2026-06-21 17:11:11 - consumer_email - INFO - ⏳ Waiting 2 seconds before next email batch...

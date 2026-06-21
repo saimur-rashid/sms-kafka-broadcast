@@ -1,0 +1,37 @@
+2026-06-17 16:23:18 - dlq - INFO - 🚨 DLQ Consumer Started - Waiting for failed messages...
+2026-06-17 16:23:20 - dlq - ERROR - DLQ Error: KafkaError{code=UNKNOWN_TOPIC_OR_PART,val=3,str="Subscribed topic not available: sms_dlq_topic: Broker: Unknown topic or partition"}
+2026-06-17 16:23:39 - dlq - CRITICAL - 
+        ═══════════════════════════════════════
+        🛑 DLQ ALERT - FAILED MESSAGE
+        ID          : 4
+        Bank ID     : 1790
+        Phone       : None
+        Retry Count : 3
+        Error       : Unknown
+        Time        : 1781691799.2427354
+        ═══════════════════════════════════════
+        
+2026-06-17 16:23:40 - dlq - CRITICAL - 
+        ═══════════════════════════════════════
+        🛑 DLQ ALERT - FAILED MESSAGE
+        ID          : 5
+        Bank ID     : 1790
+        Phone       : None
+        Retry Count : 3
+        Error       : Unknown
+        Time        : 1781691799.2459414
+        ═══════════════════════════════════════
+        
+2026-06-17 16:23:51 - dlq - CRITICAL - 
+        ═══════════════════════════════════════
+        🛑 DLQ ALERT - FAILED MESSAGE
+        ID          : 6
+        Bank ID     : 1790
+        Phone       : None
+        Retry Count : 3
+        Error       : Unknown
+        Time        : 1781691799.2485266
+        ═══════════════════════════════════════
+        
+2026-06-17 16:39:52 - dlq - INFO - 🚨 DLQ Consumer Started - Waiting for failed messages...
+2026-06-17 16:39:53 - dlq - ERROR - DLQ Error: KafkaError{code=UNKNOWN_TOPIC_OR_PART,val=3,str="Subscribed topic not available: sms_dlq_topic: Broker: Unknown topic or partition"}
