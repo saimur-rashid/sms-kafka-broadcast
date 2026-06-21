@@ -26,6 +26,8 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_LOG_DIRS: /var/lib/kafka/data
+      # ✅ Add this to auto-create topics on startup
+      KAFKA_CREATE_TOPICS: "sms_topic:30:1,email_topic:30:1,sms_retry_topic:10:1,sms_dlq_topic:5:1"
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
@@ -57,32 +59,6 @@ services:
     networks:
       - sms-network
 
-  # ==================== TOPIC INITIALIZER ====================
-  # Creates all required topics with correct names/partitions on every `up`.
-  # Topic names here MUST match utils/config.json exactly.
-  kafka-init:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: kafka-init
-    depends_on:
-      kafka:
-        condition: service_healthy
-    networks:
-      - sms-network
-    entrypoint: ["/bin/bash", "-c"]
-    command: >
-      "
-      echo '⏳ Waiting for Kafka to be ready...' &&
-      kafka-topics --bootstrap-server kafka:9092 --list &&
-      echo '🚀 Creating topics...' &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic sms_topic --partitions 30 --replication-factor 1 &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic email_topic --partitions 30 --replication-factor 1 &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic sms_retry_topic --partitions 10 --replication-factor 1 &&
-      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic sms_dlq_topic --partitions 5 --replication-factor 1 &&
-      echo '✅ Topics ready:' &&
-      kafka-topics --bootstrap-server kafka:9092 --list
-      "
-    restart: "no"
-
   # ==================== PRODUCERS ====================
   producer-sms:
     build:
@@ -92,9 +68,7 @@ services:
     command: python producers/producer_sms.py
     depends_on:
       kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully  # ✅ Wait for topics to exist
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PYTHONPATH=/app
@@ -122,9 +96,7 @@ services:
     command: python producers/producer_email.py
     depends_on:
       kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully  # ✅ Wait for topics to exist
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PYTHONPATH=/app
@@ -153,9 +125,7 @@ services:
     command: python consumers/consumer_sms.py
     depends_on:
       kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully  # ✅ Wait for topics to exist
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PYTHONPATH=/app
@@ -182,9 +152,7 @@ services:
     command: python consumers/consumer_email.py
     depends_on:
       kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully  # ✅ Wait for topics to exist
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PYTHONPATH=/app
@@ -211,9 +179,7 @@ services:
     container_name: retry-consumer
     depends_on:
       kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully  # ✅ Wait for topics to exist
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PYTHONPATH=/app
@@ -239,9 +205,7 @@ services:
     container_name: dlq-consumer
     depends_on:
       kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully  # ✅ Wait for topics to exist
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PYTHONPATH=/app
@@ -267,9 +231,7 @@ services:
     container_name: payment-executor
     depends_on:
       kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully  # ✅ Wait for topics to exist
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - PYTHONPATH=/app
