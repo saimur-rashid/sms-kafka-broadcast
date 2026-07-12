@@ -27,3 +27,12 @@
 2026-06-21 17:31:06 - payment_data_executor - DEBUG - No new payment records found
 2026-06-21 17:36:06 - payment_data_executor - DEBUG - No new payment records found
 2026-06-21 17:41:06 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 18:24:53 - payment_data_executor - INFO - 🔍 Testing Oracle Database Connection...
+2026-06-21 18:24:54 - payment_data_executor - INFO - ✅ Oracle Connection Successful! Server Time: 2026-06-21 18:24:54
+2026-06-21 18:24:54 - payment_data_executor - INFO - 📋 Columns in SMS_EMAIL_Q_TABLE: ['ID', 'CREATE_AT', 'UPDATED_AT', 'BANK_ID', 'CLIENT_ID', 'CARD_NO', 'MOBILE', 'STATUS_SMS', 'EMAIL', 'STATUS_EMAIL', 'MSG_TYPE', 'MESSAGE', 'RETRY_COUNT', 'ERROR_MESSAGE', 'CONSUMER_ID']
+2026-06-21 18:24:54 - payment_data_executor - INFO - 📋 Columns in PAYMENT_TEST: ['TXN_ID', 'MOBILE', 'AMOUNT', 'BANK_ID', 'MESSAGE', 'STATUS', 'RETRY_COUNT', 'ERROR_MSG', 'CREATED_AT', 'UPDATED_AT', 'EMAIL']
+2026-06-21 18:24:54 - payment_data_executor - INFO - Creating Oracle Connection Pool...
+2026-06-21 18:24:54 - payment_data_executor - INFO - 🚀 Payment Producer Started - Polling Payment Table every 5 minutes...
+2026-06-21 18:24:54 - payment_data_executor - INFO - 📌 Loaded last transaction ID: 5
+2026-06-21 18:24:54 - payment_data_executor - DEBUG - No new payment records found
+2026-06-21 18:29:54 - payment_data_executor - DEBUG - No new payment records found

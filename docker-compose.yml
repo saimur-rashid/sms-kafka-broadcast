@@ -27,7 +27,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       # ✅ Add this to auto-create topics on startup
-      KAFKA_CREATE_TOPICS: "sms_topic:30:1,email_topic:30:1,sms_retry_topic:10:1,sms_dlq_topic:5:1"
+      KAFKA_CREATE_TOPICS: "sms_topic:30:1,email_topic:30:1,retry_topic:10:1,dlq_topic:5:1"
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:

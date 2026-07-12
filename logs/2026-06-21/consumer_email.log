@@ -6,3 +6,4 @@
 2026-06-21 17:11:11 - consumer_email - INFO - ✅ Email batch complete: 1 msgs in 4.03s (0 msg/sec)
 2026-06-21 17:11:11 - consumer_email - INFO - 📊 Email Success: 0 | Failed: 0
 2026-06-21 17:11:11 - consumer_email - INFO - ⏳ Waiting 2 seconds before next email batch...
+2026-06-21 18:24:53 - consumer_email - INFO - 🚀 Email Consumer started with group: email-bank-consumer-1782044693

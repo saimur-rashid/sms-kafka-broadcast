@@ -4,17 +4,14 @@ import logging
 
 import oracledb
 from confluent_kafka import Producer, Consumer
-#from .logger_config import setup_logger
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
 def load_config():
-    # Get the directory where this utils.py file is located
     utils_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(utils_dir, 'config.json')
-
     with open(config_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
@@ -37,7 +34,7 @@ def create_consumer(group_id):
     conf = {
         'bootstrap.servers': bootstrap_servers,
         'group.id': group_id,
-        'auto.offset.reset': 'earliest',  # Changed from 'latest' to reprocess messages
+        'auto.offset.reset': 'earliest',
         'enable.auto.commit': False,
     }
     return Consumer(conf)
@@ -48,7 +45,7 @@ _pool: oracledb.ConnectionPool | None = None
 
 
 def get_pool(config: dict | None = None) -> oracledb.ConnectionPool:
-    """Returns a shared connection pool (lazy-initialised, singleton)."""
+    """Shared connection pool — lazy-initialised singleton."""
     global _pool
     if _pool is None:
         if config is None:
@@ -62,16 +59,12 @@ def get_pool(config: dict | None = None) -> oracledb.ConnectionPool:
             max=10,
             increment=1,
         )
+        # Optional: Add LOB handler globally
+        oracledb.defaults.fetch_lobs = False
     return _pool
 
 
-# ─── DB Status Updater ───────────────────────────────────────────────────────
-# Status codes:
-#   P = Pending   (initial, sitting in DB)
-#   Q = Queued    (pulled by producer, pushed to Kafka)
-#   S = Sent      (consumer got 200/202 from ULKA)
-#   R = Retry     (consumer failed, pushed to retry topic)
-#   F = Failed    (exhausted retries, moved to DLQ)
+# ─── DB Status Updaters ───────────────────────────────────────────────────────
 
 def update_sms_status(
         msg_id,
@@ -79,16 +72,17 @@ def update_sms_status(
         retry_count=0,
         error_msg=None,
         consumer_id=None,
+        response_data=None,
         config=None,
 ):
+    """Update STATUS on RPT.SMS_Q_TABLE"""
     pool = get_pool(config)
-
     with pool.acquire() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                UPDATE SMS_EMAIL_Q_TABLE
-                SET STATUS_SMS        = :status,
+                UPDATE RPT.SMS_Q_TABLE
+                SET STATUS        = :status,
                     RETRY_COUNT   = :retry_count,
                     ERROR_MESSAGE = :error_msg,
                     CONSUMER_ID   = :consumer_id,
@@ -101,8 +95,9 @@ def update_sms_status(
                 consumer_id=consumer_id,
                 msg_id=msg_id,
             )
-
         conn.commit()
+    logger.debug(f"SMS_Q_TABLE updated: ID={msg_id} STATUS={status}")
+
 
 def update_email_status(
         msg_id,
@@ -110,16 +105,17 @@ def update_email_status(
         retry_count=0,
         error_msg=None,
         consumer_id=None,
+        response_data=None,
         config=None,
 ):
+    """Update STATUS on RPT.EMAIL_Q_TABLE"""
     pool = get_pool(config)
-
     with pool.acquire() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                UPDATE SMS_EMAIL_Q_TABLE
-                SET STATUS_EMAIL        = :status,
+                UPDATE RPT.EMAIL_Q_TABLE
+                SET STATUS        = :status,
                     RETRY_COUNT   = :retry_count,
                     ERROR_MESSAGE = :error_msg,
                     CONSUMER_ID   = :consumer_id,
@@ -132,5 +128,22 @@ def update_email_status(
                 consumer_id=consumer_id,
                 msg_id=msg_id,
             )
-
         conn.commit()
+    logger.debug(f"EMAIL_Q_TABLE updated: ID={msg_id} STATUS={status}")
+
+
+# ─── Get Message Status ───────────────────────────────────────────────────────
+
+def get_message_status(msg_id, msg_type="sms"):
+    """Return current STATUS from the correct queue table"""
+    table_name = "RPT.SMS_Q_TABLE" if msg_type.lower() == "sms" else "RPT.EMAIL_Q_TABLE"
+
+    pool = get_pool()
+    with pool.acquire() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT STATUS FROM {table_name} WHERE ID = :msg_id",
+                msg_id=msg_id
+            )
+            row = cur.fetchone()
+            return row[0] if row else None

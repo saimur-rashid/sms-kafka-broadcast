@@ -19,7 +19,7 @@
     "producer_batch_timeout_ms": 100
   },
   "email_api": {
-    "url": "https://api.emailservice.com/send",
+    "url": "http://10.0.14.138:4000/api/way4/txn-receive",
     "api_key": "0fd21017832dbd23d7eda37f155e9f03",
     "timeout": 30
   },
@@ -35,7 +35,7 @@
         "sender": "QCASH"
       },
       "email_subject": "Payment Notification",
-      "email_from": "notifications@yourbank.com"
+      "email_from": "notification@itcbd.com"
     },
     {
       "bank_id": "1791",

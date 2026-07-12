@@ -9,44 +9,61 @@ logger = setup_logger('consumer_email', 'consumer_email')
 config = load_config()
 kafka_cfg = config['kafka']
 
-consumer_group = f"email-bank-consumer-{int(time.time())}"
+# FIX #1: Fixed group ID — time-based group resets offsets on every restart
+consumer_group = "email-bank-consumer"
 consumer = create_consumer(consumer_group)
 consumer.subscribe([kafka_cfg['email_topic']])
 
 logger.info(f"🚀 Email Consumer started with group: {consumer_group}")
 
-# ✅ Workers for email processing
+# FIX #2: Single producer created once at startup — not per failed message
+retry_producer = create_producer()
+
 executor = ThreadPoolExecutor(max_workers=kafka_cfg.get('consumer_max_workers', 200))
 
 
 def call_email_api(bank, payload):
-    """Call Email API Gateway"""
+    """Call Internal Email API Gateway"""
     try:
         email_api_url = config['email_api']['url']
         api_key = config['email_api']['api_key']
-        email_timeout = config['email_api'].get('timeout', 30)
 
-        # Get email configuration from bank
-        email_from = bank.get('email_from')
-        email_subject = bank.get('email_subject')
+        # Build the required "text" field
+        text_body = (
+            f"txn_type: {payload.get('SUBJECT', payload.get('msg_type', 'Transaction'))} | "
+            f"txn_no : {payload.get('id', 'N/A')} | "
+            f"card_no : {payload.get('card_no', 'N/A')} | "
+            f"txn_date: {payload.get('txn_date', 'N/A')} | "
+            f"currency : {payload.get('currency', 'N/A')} | "
+            f"amount : {payload.get('amount', 'N/A')}"
+        )
 
-        # Prepare email payload
         email_payload = {
-            "from": email_from,
-            "to": [payload['email']],  # Single recipient
+            "from": bank.get('email_from', "notifications@yourbank.com"),
+            "to": [payload['email']],
             "cc": [],
             "bcc": [],
-            "subject": email_subject,
-            "date": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "body": payload['message']
+            "subject": payload.get('subject') or bank.get('email_subject', 'Payment Notification'),
+            "date": time.strftime("%Y-%m-%d %I:%M %p", time.gmtime()),
+            "text": text_body
         }
+
+        # ==================== DEBUG PRINT ====================
+        print("\n" + "="*80)
+        print("EMAIL PAYLOAD TO BE SENT:")
+        print("="*80)
+        print(json.dumps(email_payload, indent=2, ensure_ascii=False))
+        print("="*80 + "\n")
+
+        # Optional: Also log it at DEBUG level
+        logger.debug(f"Full Email Payload:\n{json.dumps(email_payload, indent=2)}")
 
         headers = {
             'Content-Type': 'application/json',
-            'secret-key': api_key  # As per your requirement
+            'secret-key': api_key
         }
 
-        logger.debug(f"Sending email to {payload['email']} for ID: {payload.get('id')}")
+        logger.info(f"Sending email to {payload['email']} | ID: {payload.get('id')}")
 
         response = requests.post(
             email_api_url,
@@ -55,21 +72,17 @@ def call_email_api(bank, payload):
             timeout=30
         )
 
+        logger.info(f"Email API Response | Status={response.status_code} | ID={payload.get('id')}")
+
         if response.status_code in [200, 201, 202]:
             logger.debug(f"✅ Email sent successfully for ID: {payload.get('id')}")
             return True, response.json() if response.text else {}
         else:
-            logger.error(f"Email API returned {response.status_code}: {response.text}")
+            logger.error(f"Email API Failed | Status={response.status_code} | Body={response.text[:400]}")
             return False, {"error": f"HTTP {response.status_code}", "response": response.text}
 
-    except requests.exceptions.Timeout:
-        logger.error(f"Email API timeout for ID: {payload.get('id')}")
-        return False, {"error": "Timeout"}
-    except requests.exceptions.ConnectionError:
-        logger.error(f"Email API connection error for ID: {payload.get('id')}")
-        return False, {"error": "Connection Error"}
     except Exception as e:
-        logger.error(f"Email API Error - ID: {payload.get('id')}: {e}")
+        logger.exception(f"Email API Exception - ID: {payload.get('id')}")
         return False, {"error": str(e)}
 
 
@@ -80,15 +93,13 @@ failed_count = 0
 
 while True:
     try:
-        # Collect messages in batch
         msg = consumer.poll(0.05)
         if msg is not None and not msg.error():
             batch_messages.append(msg)
 
-        # Process when: 1000 messages collected OR 1 second passed
         should_process = (
-                len(batch_messages) >= 1000 or
-                (len(batch_messages) > 0 and time.time() - last_process_time >= 1)
+            len(batch_messages) >= 1000 or
+            (len(batch_messages) > 0 and time.time() - last_process_time >= 1)
         )
 
         if should_process and batch_messages:
@@ -97,7 +108,6 @@ while True:
 
             futures_to_msg = {}
 
-            # Submit all requests in parallel
             for msg in batch_messages:
                 try:
                     payload = json.loads(msg.value().decode('utf-8'))
@@ -110,7 +120,6 @@ while True:
                         consumer.commit(msg)
                         continue
 
-                    # Validate email address
                     if not payload.get('email'):
                         logger.error(f"Email address missing for ID: {payload.get('id')}")
                         update_email_status(payload["id"], status="F",
@@ -120,15 +129,14 @@ while True:
 
                     future = executor.submit(call_email_api, bank, payload)
                     futures_to_msg[future] = (msg, payload)
+
                 except Exception as e:
                     logger.error(f"Batch prep error: {e}")
                     consumer.commit(msg)
 
-            # Process results as they complete
             for future in as_completed(futures_to_msg.keys()):
                 msg, payload = futures_to_msg[future]
-                msg_id = payload["id"]
-                bank_id = payload['bank_id']
+                msg_id      = payload["id"]
                 retry_count = int(payload.get("retry_count", 0))
 
                 try:
@@ -141,23 +149,29 @@ while True:
                     else:
                         retry_count += 1
                         payload['retry_count'] = retry_count
-                        p = create_producer()
 
                         if retry_count >= kafka_cfg['max_retries']:
                             logger.error(f"🚨 Email DLQ: {msg_id}")
-                            p.produce(kafka_cfg['dlq_topic'],
-                                      json.dumps(payload).encode('utf-8'))
+                            retry_producer.produce(
+                                kafka_cfg['dlq_topic'],
+                                json.dumps(payload).encode('utf-8')
+                            )
                             update_email_status(msg_id, status="F", retry_count=retry_count,
                                                 error_msg="Max retries exhausted",
                                                 response_data=json.dumps(response_data))
                         else:
-                            logger.warning(f"🔄 Email Retry {retry_count}/{kafka_cfg['max_retries']} - {msg_id}")
-                            p.produce(kafka_cfg['retry_topic'],
-                                      json.dumps(payload).encode('utf-8'))
+                            logger.warning(
+                                f"🔄 Email Retry {retry_count}/{kafka_cfg['max_retries']} - {msg_id}"
+                            )
+                            retry_producer.produce(
+                                kafka_cfg['retry_topic'],
+                                json.dumps(payload).encode('utf-8')
+                            )
                             update_email_status(msg_id, status="R", retry_count=retry_count,
                                                 error_msg="Email API Failed",
                                                 response_data=json.dumps(response_data))
-                        p.flush()
+
+                        retry_producer.flush()
                         failed_count += 1
 
                     consumer.commit(msg)
@@ -165,15 +179,17 @@ while True:
                 except Exception as e:
                     logger.error(f"Email result error - ID: {payload.get('id')}: {e}")
 
-            elapsed = time.time() - start_time
+            elapsed    = time.time() - start_time
             batch_size = len(batch_messages)
             throughput = batch_size / elapsed if elapsed > 0 else 0
 
-            logger.info(f"✅ Email batch complete: {batch_size} msgs in {elapsed:.2f}s ({throughput:.0f} msg/sec)")
+            logger.info(
+                f"✅ Email batch complete: {batch_size} msgs in {elapsed:.2f}s "
+                f"({throughput:.0f} msg/sec)"
+            )
             logger.info(f"📊 Email Success: {success_count} | Failed: {failed_count}")
+            logger.info("⏳ Waiting 2 seconds before next email batch...")
 
-            # ✅ WAIT 2 SECONDS AFTER BATCH COMPLETE
-            logger.info(f"⏳ Waiting 2 seconds before next email batch...")
             time.sleep(2)
             batch_messages = []
             last_process_time = time.time()
