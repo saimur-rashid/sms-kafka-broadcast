@@ -29,17 +29,13 @@ def call_email_api(bank, payload):
         api_key = config['email_api']['api_key']
 
         # Build the required "text" field
-        text_body = (
-            f"txn_type: {payload.get('SUBJECT', payload.get('msg_type', 'Transaction'))} | "
-            f"txn_no : {payload.get('id', 'N/A')} | "
-            f"card_no : {payload.get('card_no', 'N/A')} | "
-            f"txn_date: {payload.get('txn_date', 'N/A')} | "
-            f"currency : {payload.get('currency', 'N/A')} | "
-            f"amount : {payload.get('amount', 'N/A')}"
+        text_body = payload.get(
+            'message',
+            'Transaction notification'
         )
 
         email_payload = {
-            "from": bank.get('email_from', "notifications@yourbank.com"),
+            "from": bank.get('email_from', "notification@qcashbd.com"),
             "to": [payload['email']],
             "cc": [],
             "bcc": [],

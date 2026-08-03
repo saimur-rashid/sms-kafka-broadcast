@@ -190,8 +190,17 @@ while True:
                                 max_txn_id = max(max_txn_id, txn_id)
                                 continue
 
-                            sms_message = message or f"Payment of {amount} {currency or 'BDT'} processed successfully"
 
+
+                            sms_message = message or f"Payment of {amount} {currency or 'BDT'} processed successfully"
+                            email_message = (
+                                f"txn_type: Payment | "
+                                f"txn_no: {txn_id} | "
+                                f"card_no: {'4567890123456789'} | "
+                                f"txn_date: {created_at if created_at else 'N/A'} | "
+                                f"currency: {currency if currency else 'N/A'} | "
+                                f"amount: {amount if amount is not None else 'N/A'}"
+                            )
                             # ── SMS ──────────────────────────────────────────
                             if mobile:
                                 insert_sms(
@@ -213,7 +222,7 @@ while True:
                                     cursor,
                                     bank_id,
                                     email,
-                                    sms_message,
+                                    email_message,
                                     subject=f"Payment Notification - TXN {txn_id}",
                                     txn_date=created_at,  # Use CREATED_AT
                                     client_id='1235',

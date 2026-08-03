@@ -250,6 +250,33 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ==================== CLIENT_INFO_CHANGE EXECUTOR ====================
+  client-info-change-executor:
+    build:
+      context: .
+      dockerfile: email-phone-address-change/Dockerfile
+    container_name: client-info-change-executor
+    depends_on:
+      kafka:
+        condition: service_healthy  # ✅ Wait for Kafka to be healthy
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - PYTHONPATH=/app
+      - TZ=Asia/Dhaka
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./utils/config.json:/app/utils/config.json:ro
+      - ./email-phone-address-change:/app/email-phone-address-change
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - sms-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   kafka_data:
 

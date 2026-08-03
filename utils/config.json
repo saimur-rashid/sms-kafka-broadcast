@@ -35,7 +35,7 @@
         "sender": "QCASH"
       },
       "email_subject": "Payment Notification",
-      "email_from": "notification@itcbd.com"
+      "email_from": "notification@qcashbd.com"
     },
     {
       "bank_id": "1791",
@@ -48,7 +48,7 @@
         "sender": "QCASH"
       },
       "email_subject": "Payment Notification",
-      "email_from": "notifications@yourbank.com"
+      "email_from": "notification@qcashbd.com"
     }
   ]
 }
